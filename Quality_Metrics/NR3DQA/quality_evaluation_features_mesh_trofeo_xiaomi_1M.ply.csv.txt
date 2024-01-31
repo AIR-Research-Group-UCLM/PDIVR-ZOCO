@@ -1,0 +1,9 @@
+[FILE NAME] C:/Users/Usuario/Desktop/dev_repositories_from_GH/NR-3DQA/experiment for WPC/features_mesh_trofeo_xiaomi_1M.ply.csv
+(*) PREDICTED MOSs for each training: 
+[0.50421718]
+[0.48530338]
+[0.38444268]
+[0.37666678]
+[0.4797001]
+(*) MEAN OF PREDICTED MOSs for each training: 
+[0.44606602]

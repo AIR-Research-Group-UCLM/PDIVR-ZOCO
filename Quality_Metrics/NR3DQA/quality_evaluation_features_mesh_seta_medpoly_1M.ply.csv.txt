@@ -1,0 +1,9 @@
+[FILE NAME] C:/Users/Usuario/Desktop/dev_repositories_from_GH/NR-3DQA/experiment for WPC/features_mesh_seta_medpoly_1M.ply.csv
+(*) PREDICTED MOSs for each training: 
+[0.80726934]
+[0.82647339]
+[0.77999569]
+[0.69671713]
+[0.86356589]
+(*) MEAN OF PREDICTED MOSs for each training: 
+[0.79480429]

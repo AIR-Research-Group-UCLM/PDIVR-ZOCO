@@ -1,0 +1,9 @@
+[FILE NAME] C:/Users/Usuario/Desktop/dev_repositories_from_GH/NR-3DQA/experiment for WPC/features_mesh_quemador_lowpoly_1M.ply.csv
+(*) PREDICTED MOSs for each training: 
+[0.75028786]
+[0.49891632]
+[0.62870934]
+[0.56566874]
+[0.79993449]
+(*) MEAN OF PREDICTED MOSs for each training: 
+[0.64870335]

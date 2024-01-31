@@ -1,0 +1,9 @@
+[FILE NAME] C:/Users/Usuario/Desktop/dev_repositories_from_GH/NR-3DQA/experiment for WPC/features_mesh_iPad_polycam_munich_1M.ply.csv
+(*) PREDICTED MOSs for each training: 
+[0.74372059]
+[0.77069681]
+[0.70586731]
+[0.6753123]
+[0.80608264]
+(*) MEAN OF PREDICTED MOSs for each training: 
+[0.73633593]

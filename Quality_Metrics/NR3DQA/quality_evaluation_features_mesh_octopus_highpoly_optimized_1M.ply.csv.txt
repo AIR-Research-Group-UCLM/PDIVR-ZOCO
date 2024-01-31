@@ -1,0 +1,9 @@
+[FILE NAME] C:/Users/Usuario/Desktop/dev_repositories_from_GH/NR-3DQA/experiment for WPC/features_mesh_octopus_highpoly_optimized_1M.ply.csv
+(*) PREDICTED MOSs for each training: 
+[0.59370557]
+[0.55556416]
+[0.53717952]
+[0.44891282]
+[0.66139525]
+(*) MEAN OF PREDICTED MOSs for each training: 
+[0.55935146]

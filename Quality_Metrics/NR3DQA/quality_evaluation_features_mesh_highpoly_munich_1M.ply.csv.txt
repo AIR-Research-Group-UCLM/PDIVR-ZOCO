@@ -1,0 +1,9 @@
+[FILE NAME] C:/Users/Usuario/Desktop/dev_repositories_from_GH/NR-3DQA/experiment for WPC/features_mesh_highpoly_munich_1M.ply.csv
+(*) PREDICTED MOSs for each training: 
+[0.74323635]
+[0.72571127]
+[0.73371057]
+[0.65304219]
+[0.78056582]
+(*) MEAN OF PREDICTED MOSs for each training: 
+[0.72725324]

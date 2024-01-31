@@ -1,0 +1,9 @@
+[FILE NAME] C:/Users/Usuario/Desktop/dev_repositories_from_GH/NR-3DQA/experiment for WPC/features_mesh_seta_xiaomi_1M.ply.csv
+(*) PREDICTED MOSs for each training: 
+[0.73380783]
+[0.50835836]
+[0.63976313]
+[0.58361082]
+[0.80565717]
+(*) MEAN OF PREDICTED MOSs for each training: 
+[0.65423946]

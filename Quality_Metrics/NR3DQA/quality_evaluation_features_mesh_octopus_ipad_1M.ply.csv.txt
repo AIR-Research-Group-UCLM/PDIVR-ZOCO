@@ -1,0 +1,9 @@
+[FILE NAME] C:/Users/Usuario/Desktop/dev_repositories_from_GH/NR-3DQA/experiment for WPC/features_mesh_octopus_ipad_1M.ply.csv
+(*) PREDICTED MOSs for each training: 
+[0.48971625]
+[0.437825]
+[0.37393818]
+[0.35935858]
+[0.48326554]
+(*) MEAN OF PREDICTED MOSs for each training: 
+[0.42882071]

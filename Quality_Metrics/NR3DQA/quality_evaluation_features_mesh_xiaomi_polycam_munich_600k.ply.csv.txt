@@ -1,0 +1,9 @@
+[FILE NAME] C:/Users/Usuario/Desktop/dev_repositories_from_GH/NR-3DQA/experiment for WPC/features_mesh_xiaomi_polycam_munich_600k.ply.csv
+(*) PREDICTED MOSs for each training: 
+[0.87190778]
+[0.84350941]
+[0.82468072]
+[0.73669085]
+[0.96028089]
+(*) MEAN OF PREDICTED MOSs for each training: 
+[0.84741393]

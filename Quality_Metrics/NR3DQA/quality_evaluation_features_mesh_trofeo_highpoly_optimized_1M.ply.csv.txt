@@ -1,0 +1,9 @@
+[FILE NAME] C:/Users/Usuario/Desktop/dev_repositories_from_GH/NR-3DQA/experiment for WPC/features_mesh_trofeo_highpoly_optimized_1M.ply.csv
+(*) PREDICTED MOSs for each training: 
+[0.71201174]
+[0.73220939]
+[0.69865346]
+[0.59377372]
+[0.81218849]
+(*) MEAN OF PREDICTED MOSs for each training: 
+[0.70976736]
