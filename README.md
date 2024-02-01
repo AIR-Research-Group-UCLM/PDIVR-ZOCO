@@ -3,7 +3,7 @@
 1. [Abstract](#Abstract)
 2. [Repository structure](#Repository-structure)
 3. [Filenames](#filenames)
-4. [Fourth Example](#fourth-examplehttpwwwfourthexamplecom)
+4. [Python Notebook link](#Google-colab)
 
 ## Abstract 
 Virtual Reality (VR) is and will be a key driver in the evolution of e-commerce, providing an immersive and gamified shopping experience. However, for VR shopping spaces to become a reality, retailers' product catalogues must first be digitised into 3D models. While this may be a simple task for retail giants, it can be a major obstacle for small retailers, whose human and financial resources are often more limited, making them less competitive. Therefore, this paper presents an analysis of low-cost scanning technologies for small business owners to digitise their products and make them available on a VR shopping platform, which aims to help improve the competitiveness of small businesses through VR and Artificial Intelligence (AI). The technologies to be considered are photogrammetry, LiDAR sensors and NeRF. In addition to investigating which technology provides the best visual quality of 3D models based on metrics and quantitative results, these models must also offer good performance in commercial VR headsets. In this way, we also analyse the performance of such models when running on Meta Quest 2, Quest Pro and Quest 3 headsets to determine their feasibility and provide use cases for each type of model from a scalability point of view. Finally, our work describes an model optimisation process that can be automated and integrated into VR-ZOCO. While NeRF and photogrammetry are the technologies that provide better visual quality 3D models for VR spaces, LiDAR sensors are not recommended for product digitisation based on the obtained results. In terms of performance, the paper presents which models are more suitable for both VR spaces with a high number of available products, simulating shopping centre floors, and simple shops with one or a few exhibitors.
@@ -26,3 +26,6 @@ Please, note that there might be filenames with missing translations. Therefore,
 - **Pirámide : Pyramid**
 - **Letra : Letter**
 - **Zapatillas : Sport shoes**
+
+## Google Colab (Python Notebook online)
+In [this link](https://colab.research.google.com/drive/1zfpSnslUi08qnFtEYxzXof_BGuaCzsDI?usp=sharing) you can find the Python Notebook created for analysing the performance data. It requires you to upload the files inside **OVRMetricsTool_Files** directory. Please, note that you need to upload the files of each device separately, except for CPU and GPU levels graph, for which you need to upload the files from all devices. This Notebook also contains the code developed for creating the graphs used in the paper.
