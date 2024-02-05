@@ -42,32 +42,32 @@ namespace Oculus.Voice.Demo
         private bool _active = false;
 
         // Add delegates
-        private void OnEnable()
+        /*private void OnEnable()
         {
             textArea.text = freshStateText;
-            appVoiceExperience.VoiceEvents.OnRequestCreated.AddListener(OnRequestStarted);
-            appVoiceExperience.VoiceEvents.OnPartialTranscription.AddListener(OnRequestTranscript);
-            appVoiceExperience.VoiceEvents.OnFullTranscription.AddListener(OnRequestTranscript);
-            appVoiceExperience.VoiceEvents.OnStartListening.AddListener(OnListenStart);
-            appVoiceExperience.VoiceEvents.OnStoppedListening.AddListener(OnListenStop);
-            appVoiceExperience.VoiceEvents.OnStoppedListeningDueToDeactivation.AddListener(OnListenForcedStop);
-            appVoiceExperience.VoiceEvents.OnStoppedListeningDueToInactivity.AddListener(OnListenForcedStop);
-            appVoiceExperience.VoiceEvents.OnResponse.AddListener(OnRequestResponse);
-            appVoiceExperience.VoiceEvents.OnError.AddListener(OnRequestError);
+            appVoiceExperience.events.OnRequestCreated.AddListener(OnRequestStarted);
+            appVoiceExperience.events.OnPartialTranscription.AddListener(OnRequestTranscript);
+            appVoiceExperience.events.OnFullTranscription.AddListener(OnRequestTranscript);
+            appVoiceExperience.events.OnStartListening.AddListener(OnListenStart);
+            appVoiceExperience.events.OnStoppedListening.AddListener(OnListenStop);
+            appVoiceExperience.events.OnStoppedListeningDueToDeactivation.AddListener(OnListenForcedStop);
+            appVoiceExperience.events.OnStoppedListeningDueToInactivity.AddListener(OnListenForcedStop);
+            appVoiceExperience.events.OnResponse.AddListener(OnRequestResponse);
+            appVoiceExperience.events.OnError.AddListener(OnRequestError);
         }
         // Remove delegates
         private void OnDisable()
         {
-            appVoiceExperience.VoiceEvents.OnRequestCreated.RemoveListener(OnRequestStarted);
-            appVoiceExperience.VoiceEvents.OnPartialTranscription.RemoveListener(OnRequestTranscript);
-            appVoiceExperience.VoiceEvents.OnFullTranscription.RemoveListener(OnRequestTranscript);
-            appVoiceExperience.VoiceEvents.OnStartListening.RemoveListener(OnListenStart);
-            appVoiceExperience.VoiceEvents.OnStoppedListening.RemoveListener(OnListenStop);
-            appVoiceExperience.VoiceEvents.OnStoppedListeningDueToDeactivation.RemoveListener(OnListenForcedStop);
-            appVoiceExperience.VoiceEvents.OnStoppedListeningDueToInactivity.RemoveListener(OnListenForcedStop);
-            appVoiceExperience.VoiceEvents.OnResponse.RemoveListener(OnRequestResponse);
-            appVoiceExperience.VoiceEvents.OnError.RemoveListener(OnRequestError);
-        }
+            appVoiceExperience.events.OnRequestCreated.RemoveListener(OnRequestStarted);
+            appVoiceExperience.events.OnPartialTranscription.RemoveListener(OnRequestTranscript);
+            appVoiceExperience.events.OnFullTranscription.RemoveListener(OnRequestTranscript);
+            appVoiceExperience.events.OnStartListening.RemoveListener(OnListenStart);
+            appVoiceExperience.events.OnStoppedListening.RemoveListener(OnListenStop);
+            appVoiceExperience.events.OnStoppedListeningDueToDeactivation.RemoveListener(OnListenForcedStop);
+            //appVoiceExperience.events.OnStoppedListeningDueToInactivity.RemoveListener(OnListenForcedStop);
+            appVoiceExperience.events.OnResponse.RemoveListener(OnRequestResponse);
+            appVoiceExperience.events.OnError.RemoveListener(OnRequestError);
+        }*/
 
         // Request began
         private void OnRequestStarted(WitRequest r)

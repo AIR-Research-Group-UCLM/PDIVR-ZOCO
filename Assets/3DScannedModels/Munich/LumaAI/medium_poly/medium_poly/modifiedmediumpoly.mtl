@@ -1,0 +1,189 @@
+# Blender MTL File: 'modifiedmediumpoly.blend'
+# Material Count: 17
+
+newmtl material0000
+Ns 0.999999
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd obj\\textures\\mesh_medpoly_material0000_map_Kd.png
+
+newmtl material0001
+Ns 0.999999
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd obj\\textures\\mesh_medpoly_material0001_map_Kd.png
+
+newmtl material0002
+Ns 0.999999
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd obj\\textures\\mesh_medpoly_material0002_map_Kd.png
+
+newmtl material0003
+Ns 0.999999
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd obj\\textures\\mesh_medpoly_material0003_map_Kd.png
+
+newmtl material0004
+Ns 0.999999
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd obj\\textures\\mesh_medpoly_material0004_map_Kd.png
+
+newmtl material0005
+Ns 0.999999
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd obj\\textures\\mesh_medpoly_material0005_map_Kd.png
+
+newmtl material0006
+Ns 0.999999
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd obj\\textures\\mesh_medpoly_material0006_map_Kd.png
+
+newmtl material0007
+Ns 0.999999
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd obj\\textures\\mesh_medpoly_material0007_map_Kd.png
+
+newmtl material0008
+Ns 0.999999
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd obj\\textures\\mesh_medpoly_material0008_map_Kd.png
+
+newmtl material0009
+Ns 0.999999
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd obj\\textures\\mesh_medpoly_material0009_map_Kd.png
+
+newmtl material0010
+Ns 0.999999
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd obj\\textures\\mesh_medpoly_material0010_map_Kd.png
+
+newmtl material0011
+Ns 0.999999
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd obj\\textures\\mesh_medpoly_material0011_map_Kd.png
+
+newmtl material0012
+Ns 0.999999
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd obj\\textures\\mesh_medpoly_material0012_map_Kd.png
+
+newmtl material0013
+Ns 0.999999
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd obj\\textures\\mesh_medpoly_material0013_map_Kd.png
+
+newmtl material0014
+Ns 0.999999
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd obj\\textures\\mesh_medpoly_material0014_map_Kd.png
+
+newmtl material0015
+Ns 0.999999
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd obj\\textures\\mesh_medpoly_material0015_map_Kd.png
+
+newmtl material0016
+Ns 0.999999
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd obj\\textures\\mesh_medpoly_material0016_map_Kd.png

@@ -30,6 +30,7 @@ using UnityEngine.XR.OpenXR.Features;
 using UnityEditor;
 using UnityEditor.XR.OpenXR;
 using UnityEditor.XR.OpenXR.Features;
+using UnityEditor.Build.Reporting;
 #endif
 
 namespace Meta.XR
@@ -52,9 +53,6 @@ namespace Meta.XR
             "XR_FB_swapchain_update_state " +
             "XR_FB_swapchain_update_state_opengl_es " +
             "XR_FB_swapchain_update_state_vulkan " +
-            "XR_FB_foveation " +
-            "XR_FB_foveation_configuration " +
-            "XR_FB_foveation_vulkan " +
             "XR_FB_composition_layer_alpha_blend " +
             "XR_KHR_composition_layer_depth " +
             "XR_KHR_composition_layer_cylinder " +
@@ -93,10 +91,10 @@ namespace Meta.XR
     /// MetaXR Feature for OpenXR
     /// </summary>
 #if UNITY_EDITOR
-    [OpenXRFeature(UiName = "MetaXR Feature",
+    [OpenXRFeature(UiName = "Meta XR Feature",
         BuildTargetGroups = new[] { BuildTargetGroup.Standalone, BuildTargetGroup.Android },
         Company = "Meta",
-        Desc = "MetaXR Feature for OpenXR.",
+        Desc = "Meta XR Feature for OpenXR.",
         DocumentationLink = "https://developer.oculus.com/",
         OpenxrExtensionStrings = MetaXRFeatureEditorConfig.OpenXrExtensionList,
         Version = "0.0.1",
@@ -125,6 +123,34 @@ namespace Meta.XR
         /// <inheritdoc />
         protected override bool OnInstanceCreate(ulong xrInstance)
         {
+            bool isMetaHeadsetIdSupported = false;
+            string[] extensions = OpenXRRuntime.GetAvailableExtensions();
+            foreach (string extension in extensions)
+            {
+                if (extension == "XR_META_headset_id")
+                {
+                    isMetaHeadsetIdSupported = true;
+                    break;
+                }
+            }
+
+            if (isMetaHeadsetIdSupported)
+            {
+                Debug.Log("[MetaXRFeature] OpenXR runtime supports XR_META_headset_id extension. MetaXRFeature is enabled.");
+            }
+            else
+            {
+                // The runtime name string will be used to support old runtime versions which misses XR_META_headset_id extension.
+                // This path should be removed in the future.
+                string runtimeNameLowercase = OpenXRRuntime.name.ToLower();
+                if (!runtimeNameLowercase.Contains("meta") && !runtimeNameLowercase.Contains("oculus"))
+                {
+                    // disable MetaXRFeature from non-Oculus/Meta OpenXR runtimes
+                    Debug.LogWarningFormat("[MetaXRFeature] MetaXRFeature is disabled on non-Oculus/Meta OpenXR Runtime. Runtime name: {0}", OpenXRRuntime.name);
+                    return false;
+                }
+            }
+
             // here's one way you can grab the instance
             Debug.Log($"[MetaXRFeature] OnInstanceCreate: {xrInstance}");
             bool result = OVRPlugin.UnityOpenXR.OnInstanceCreate(xrInstance);
@@ -201,6 +227,23 @@ namespace Meta.XR
         // protected override void OnEnvironmentBlendModeChange (int xrEnvironmentBlendMode) {}
         // protected override void OnEnabledChange() {}
     }
+
+#if UNITY_EDITOR && UNITY_OPENXR_BOOT_CONFIG
+    internal class MetaXRBootConfig : OpenXRFeatureBuildHooks
+    {
+        public override int callbackOrder => 1;
+        public override Type featureType => typeof(MetaXRFeature);
+
+        protected override void OnPostGenerateGradleAndroidProjectExt(string path) {}
+        protected override void OnPostprocessBuildExt(BuildReport report) {}
+        protected override void OnPreprocessBuildExt(BuildReport report) {}
+
+        protected override void OnProcessBootConfigExt(BuildReport report, BootConfigBuilder builder)
+        {
+            builder.SetBootConfigValue("xr-meta-enabled", "1");
+        }
+    }
+#endif
 }
 
 #endif

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  * All rights reserved.
  *
@@ -41,8 +41,7 @@ internal class OVRConfigurationTaskRegistry
         if (_tasksPerUid.ContainsKey(uid))
         {
             // This task is already registered
-            throw new ArgumentException(
-                $"[{nameof(OVRConfigurationTask)}] Task with same Uid already exists (hash collision)");
+            return;
         }
 
         _tasks.Add(task);

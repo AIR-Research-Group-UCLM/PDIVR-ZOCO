@@ -35,7 +35,7 @@ public class OVRProjectConfigEditor : Editor
         DrawProjectConfigInspector(projectConfig);
     }
 
-        public static void DrawTargetDeviceInspector(OVRProjectConfig projectConfig)
+    public static void DrawTargetDeviceInspector(OVRProjectConfig projectConfig)
     {
         // Target Devices
         EditorGUILayout.LabelField("Target Devices", EditorStyles.boldLabel);
@@ -148,6 +148,11 @@ public class OVRProjectConfigEditor : Editor
                 OVREditorUtil.SetupEnumField(projectConfig, "Hand Tracking Version",
                     ref projectConfig.handTrackingVersion, ref hasModified);
 
+                // Concurrent hands and controllers support
+                OVREditorUtil.SetupEnumField(projectConfig, new GUIContent("Concurrent Hands/Controllers Support",
+                        "Allows the application to use concurrent hands and controllers functionality. This option must be enabled at build time."),
+                    ref projectConfig.multimodalHandsControllersSupport, ref hasModified);
+
                 // Enable Render Model Support
                 bool renderModelSupportAvailable = OVRPluginInfo.IsOVRPluginOpenXRActivated();
                 EditorGUI.BeginDisabledGroup(!renderModelSupportAvailable);
@@ -161,7 +166,17 @@ public class OVRProjectConfigEditor : Editor
                     ref projectConfig.renderModelSupport, ref hasModified);
                 if (hasModified && projectConfig.renderModelSupport == OVRProjectConfig.RenderModelSupport.Disabled)
                 {
-                    projectConfig.trackedKeyboardSupport = OVRProjectConfig.TrackedKeyboardSupport.None;
+                    if (projectConfig.trackedKeyboardSupport != OVRProjectConfig.TrackedKeyboardSupport.None)
+                    {
+                        Debug.LogWarning("Tracked Keyboard support disabled. Requires Render Model Support");
+                        projectConfig.trackedKeyboardSupport = OVRProjectConfig.TrackedKeyboardSupport.None;
+                    }
+
+                    if (projectConfig.virtualKeyboardSupport != OVRProjectConfig.FeatureSupport.None)
+                    {
+                        Debug.LogWarning("Virtual Keyboard support disabled. Requires Render Model Support");
+                        projectConfig.virtualKeyboardSupport = OVRProjectConfig.FeatureSupport.None;
+                    }
                 }
 
                 EditorGUI.EndDisabledGroup();
@@ -173,19 +188,39 @@ public class OVRProjectConfigEditor : Editor
 
                 // Tracked Keyboard Support
                 bool trackedKeyboardSupportAvailable = OVRPluginInfo.IsOVRPluginOpenXRActivated();
-                EditorGUI.BeginDisabledGroup(!trackedKeyboardSupportAvailable);
-                if (!trackedKeyboardSupportAvailable)
+                using (new EditorGUI.DisabledGroupScope(!trackedKeyboardSupportAvailable))
                 {
-                    projectConfig.trackedKeyboardSupport = OVRProjectConfig.TrackedKeyboardSupport.None;
+                    if (!trackedKeyboardSupportAvailable)
+                    {
+                        projectConfig.trackedKeyboardSupport = OVRProjectConfig.TrackedKeyboardSupport.None;
+                    }
+
+                    OVREditorUtil.SetupEnumField(projectConfig, new GUIContent("Tracked Keyboard Support",
+                            "Show user's physical keyboard in correct position in VR."),
+                        ref projectConfig.trackedKeyboardSupport, ref hasModified);
                 }
 
-                OVREditorUtil.SetupEnumField(projectConfig, new GUIContent("Tracked Keyboard Support",
-                        "Show user's physical keyboard in correct position in VR."),
-                    ref projectConfig.trackedKeyboardSupport, ref hasModified);
+                // Virtual Keyboard Support
+                bool virtualKeyboardSupportAvailable = OVRPluginInfo.IsOVRPluginOpenXRActivated();
+                using (new EditorGUI.DisabledGroupScope(!virtualKeyboardSupportAvailable))
+                {
+                    if (!virtualKeyboardSupportAvailable)
+                    {
+                        projectConfig.virtualKeyboardSupport = OVRProjectConfig.FeatureSupport.None;
+                    }
+
+                    OVREditorUtil.SetupEnumField(projectConfig, new GUIContent("Virtual Keyboard Support",
+                            "Provides a consistent typing experience across Meta Quest VR applications."),
+                        ref projectConfig.virtualKeyboardSupport, ref hasModified);
+                }
 
                 // Anchor Support - linked to Shared Spatial Anchors and Scene
                 var anchorSupportRequired = projectConfig.sharedAnchorSupport != OVRProjectConfig.FeatureSupport.None;
                 var anchorSupportTooltip = "Anchor Support is required for Shared Spatial Anchor Support.";
+                anchorSupportRequired = anchorSupportRequired ||
+                                        projectConfig.sceneSupport != OVRProjectConfig.FeatureSupport.None;
+                anchorSupportTooltip =
+                    "Anchor Support is required for Shared Spatial Anchor Support and/or Scene Support.";
                 using (new EditorGUI.DisabledScope(anchorSupportRequired))
                 {
                     var tooltip = anchorSupportRequired ? anchorSupportTooltip : "";
@@ -206,6 +241,18 @@ public class OVRProjectConfigEditor : Editor
                 }
 
 
+                // Scene Support
+                var sceneTooltip =
+                    "Enable support for scene understanding. This requires Anchor Support to be enabled.";
+                OVREditorUtil.SetupEnumField(projectConfig, new GUIContent("Scene Support", sceneTooltip),
+                    ref projectConfig.sceneSupport, ref hasModified);
+                // enable anchor support if scene requires it
+                if (projectConfig.sceneSupport != OVRProjectConfig.FeatureSupport.None &&
+                    projectConfig.anchorSupport != OVRProjectConfig.AnchorSupport.Enabled)
+                {
+                    projectConfig.anchorSupport = OVRProjectConfig.AnchorSupport.Enabled;
+                    hasModified = true;
+                }
 
                 // Body Tracking Support
                 OVREditorUtil.SetupEnumField(projectConfig, "Body Tracking Support",
@@ -220,6 +267,11 @@ public class OVRProjectConfigEditor : Editor
                     ref projectConfig.eyeTrackingSupport, ref hasModified);
 
                 if (hasModified && projectConfig.trackedKeyboardSupport != OVRProjectConfig.TrackedKeyboardSupport.None)
+                {
+                    projectConfig.renderModelSupport = OVRProjectConfig.RenderModelSupport.Enabled;
+                }
+
+                if (hasModified && projectConfig.virtualKeyboardSupport != OVRProjectConfig.FeatureSupport.None)
                 {
                     projectConfig.renderModelSupport = OVRProjectConfig.RenderModelSupport.Enabled;
                 }
@@ -239,13 +291,41 @@ public class OVRProjectConfigEditor : Editor
                         MessageType.Error);
                 }
 
-                EditorGUI.EndDisabledGroup();
+                if (projectConfig.virtualKeyboardSupport != OVRProjectConfig.FeatureSupport.None &&
+                    projectConfig.renderModelSupport == OVRProjectConfig.RenderModelSupport.Disabled)
+                {
+                    EditorGUILayout.HelpBox(
+                        "Render model support is required to load virtual keyboard models from the runtime.",
+                        MessageType.Error);
+                }
 
                 // System Splash Screen
+                bool splashScreenTextureModified = false;
                 OVREditorUtil.SetupTexture2DField(projectConfig, new GUIContent("System Splash Screen",
                         "If set, the Splash Screen will be presented by the Operating System as a high quality composition layer at launch time."),
-                    ref projectConfig.systemSplashScreen, ref hasModified,
+                    ref projectConfig.systemSplashScreen, ref splashScreenTextureModified,
                     "https://developer.oculus.com/documentation/unity/unity-splash-screen/");
+                if (splashScreenTextureModified)
+                {
+                    projectConfig.systemSplashScreen = OVRSystemSplashScreenEditor.ProcessTexture(projectConfig.systemSplashScreen);
+                    hasModified = true;
+                }
+
+                // System Splash Screen: "Mono", "Stereo"
+                OVREditorUtil.SetupEnumField(
+                    projectConfig,
+                    new GUIContent("System Splash Screen Type", "\"Mono\": Texture will be rendered to both eyes.\n\"Stereo\": Texture will be split and rendered to each eye."),
+                    ref projectConfig.systemSplashScreenType,
+                    ref hasModified
+                );
+
+                if (projectConfig.systemSplashScreenType ==
+                    OVRProjectConfig.SystemSplashScreenType.Stereo)
+                {
+                    EditorGUILayout.HelpBox(
+                        "For stereoscopic splash screen, the image needs to be double-wide with left-to-right texture pair.",
+                        MessageType.Info);
+                }
 
                 // Allow optional 3-dof head-tracking
                 OVREditorUtil.SetupBoolField(projectConfig, new GUIContent("Allow Optional 3DoF Head Tracking",
@@ -291,9 +371,6 @@ public class OVRProjectConfigEditor : Editor
                 OVREditorUtil.SetupBoolField(projectConfig, new GUIContent("Experimental Features Enabled",
                         "If checked, this application can use experimental features. Note that such features are for developer use only. This option must be disabled when submitting to the Oculus Store."),
                     ref projectConfig.experimentalFeaturesEnabled, ref hasModified);
-
-                OVREditorUtil.SetupEnumField(projectConfig, "Virtual Keyboard Support",
-                    ref projectConfig.virtualKeyboardSupport, ref hasModified);
 
                 break;
         }

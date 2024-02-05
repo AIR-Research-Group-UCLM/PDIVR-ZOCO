@@ -51,7 +51,6 @@ public class OVRPluginUpdater : IOVRPluginInfoSupplier
         Win,
         Win64,
         Win64OpenXR,
-        MetaXRSimulator,
     }
 
     class PluginPackage
@@ -281,10 +280,6 @@ public class OVRPluginUpdater : IOVRPluginInfoSupplier
                 { PluginPlatform.Win, rootPath + GetPluginBuildTargetSubPath(PluginPlatform.Win) },
                 { PluginPlatform.Win64, rootPath + GetPluginBuildTargetSubPath(PluginPlatform.Win64) },
                 { PluginPlatform.Win64OpenXR, rootPath + GetPluginBuildTargetSubPath(PluginPlatform.Win64OpenXR) },
-                {
-                    PluginPlatform.MetaXRSimulator,
-                    rootPath + GetPluginBuildTargetSubPath(PluginPlatform.MetaXRSimulator)
-                },
             }
         };
     }
@@ -357,9 +352,6 @@ public class OVRPluginUpdater : IOVRPluginInfoSupplier
             case PluginPlatform.Win64OpenXR:
                 path = @"/Win64OpenXR/OVRPlugin.dll";
                 break;
-            case PluginPlatform.MetaXRSimulator:
-                path = @"/MetaXRSimulator/SIMULATOR.dll";
-                break;
             default:
                 throw new ArgumentException("Attempted GetPluginBuildTargetSubPath() for unsupported BuildTarget: " +
                                             target);
@@ -414,8 +406,12 @@ public class OVRPluginUpdater : IOVRPluginInfoSupplier
 
     public static string GetVersionDescription(System.Version version)
     {
-        bool isVersionValid = (version != invalidVersion);
-        return isVersionValid ? version.ToString() : "(Unknown)";
+        return IsVersionValid(version) ? version.ToString() : "(Unknown)";
+    }
+
+    private static bool IsVersionValid(Version version)
+    {
+        return version != invalidVersion;
     }
 
     public static string GetEnabledUtilsPluginRootPath()
@@ -529,9 +525,6 @@ public class OVRPluginUpdater : IOVRPluginInfoSupplier
                         pi.SetPlatformData("Editor", "CPU", "X86_64");
                         pi.SetPlatformData("Editor", "OS", "Windows");
                         break;
-                    case PluginPlatform.MetaXRSimulator:
-                        // not enable for any platform
-                        break;
                     default:
                         throw new ArgumentException("Attempted EnablePluginPackage() for unsupported BuildTarget: " +
                                                     platform);
@@ -546,13 +539,17 @@ public class OVRPluginUpdater : IOVRPluginInfoSupplier
     }
 
     private static readonly string autoUpdateEnabledKey =
-        "Oculus_Utilities_OVRPluginUpdater_AutoUpdate_" + OVRManager.utilitiesVersion;
+        "Oculus_Utilities_OVRPluginUpdater_AutoUpdate2_" + OVRManager.utilitiesVersion;
 
     private static bool autoUpdateEnabled
     {
-        get { return PlayerPrefs.GetInt(autoUpdateEnabledKey, 1) == 1; }
+        get => PlayerPrefs.GetInt(autoUpdateEnabledKey, 1) == 1;
 
-        set { PlayerPrefs.SetInt(autoUpdateEnabledKey, value ? 1 : 0); }
+        set
+        {
+            PlayerPrefs.SetInt(autoUpdateEnabledKey, value ? 1 : 0);
+            PlayerPrefs.Save();
+        }
     }
 
 
@@ -622,6 +619,7 @@ public class OVRPluginUpdater : IOVRPluginInfoSupplier
                     "No"))
             {
                 DisableAllUtilitiesPluginPackages();
+                autoUpdateEnabled = false;
 
                 if (unityRunningInBatchmode
                     || EditorUtility.DisplayDialog("Restart Unity",
@@ -960,25 +958,33 @@ public class OVRPluginUpdater : IOVRPluginInfoSupplier
                     + GetVersionDescription(currentPluginPkg.Version);
             }
 
-            int dialogResult = EditorUtility.DisplayDialogComplex("Update Oculus Utilities Plugin", dialogBody, "Yes",
-                "No, Don't Ask Again", "No");
-
-            switch (dialogResult)
+            if (IsVersionValid(currentPluginPkg.Version))
             {
-                case 0: // "Yes"
-                    userAcceptsUpdate = true;
-                    break;
-                case 1: // "No, Don't Ask Again"
-                    autoUpdateEnabled = false;
+                int dialogResult = EditorUtility.DisplayDialogComplex("Update Oculus Utilities Plugin", dialogBody,
+                    "Yes", "No, Don't Ask Again", "No");
 
-                    EditorUtility.DisplayDialog("Oculus Utilities OVRPlugin",
-                        "To manually update in the future, use the following menu option:\n\n"
-                        + "[Oculus -> Tools -> Update OVR Utilities Plugin]",
-                        "Ok",
-                        "");
-                    return;
-                case 2: // "No"
-                    return;
+                switch (dialogResult)
+                {
+                    case 0: // "Yes"
+                        userAcceptsUpdate = true;
+                        break;
+                    case 1: // "No, Don't Ask Again"
+                        autoUpdateEnabled = false;
+
+                        EditorUtility.DisplayDialog("Oculus Utilities OVRPlugin",
+                            "To manually update in the future, use the following menu option:\n\n"
+                            + "[Oculus -> Tools -> Update OVR Utilities Plugin]",
+                            "Ok",
+                            "");
+                        return;
+                    case 2: // "No"
+                        return;
+                }
+            }
+            else
+            {
+                // if there's no current valid version, update it automatically
+                userAcceptsUpdate = true;
             }
         }
 
@@ -1045,7 +1051,7 @@ public class OVRPluginUpdater : IOVRPluginInfoSupplier
         }
     }
 
-    #region IOVRPluginInfoSupplier Implementation
+#region IOVRPluginInfoSupplier Implementation
 
     // Test if the OVRPlugin/OpenXR plugin is currently activated, used by other editor utilities
     public bool IsOVRPluginOpenXRActivated() => IsOVRPluginOpenXRActivatedInternal();
@@ -1067,7 +1073,7 @@ public class OVRPluginUpdater : IOVRPluginInfoSupplier
         return enabledUtilsPluginPkg != null && enabledUtilsPluginPkg.IsBundledPluginPackage();
     }
 
-    #endregion
+#endregion
 }
 
 #endif

@@ -7,96 +7,85 @@
  */
 
 using System;
-using System.Collections.Generic;
-using Meta.WitAi.Json;
+using System.Collections;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
+using Meta.Voice.Audio;
+using UnityEngine.Scripting;
 
 namespace Meta.WitAi.Requests
 {
-    // Audio stream support type
+    /// <summary>
+    /// The various supported audio decode options
+    /// </summary>
     public enum AudioStreamDecodeType
     {
         PCM16,
-        MP3
-    }
-    // Data used to handle stream
-    public struct AudioStreamData
-    {
-        // Generated clip name
-        public string ClipName;
-        // Amount of clip length in seconds that must be received before stream is considered ready.
-        public float ClipReadyLength;
-        // Total samples to be used to generate clip. A new clip will be generated every time this chunk size is surpassed
-        public int ClipChunkSize;
-
-        // Type of audio code to be decoded
-        public AudioStreamDecodeType DecodeType;
-        // Total channels being streamed
-        public int DecodeChannels;
-        // Samples per second being streamed
-        public int DecodeSampleRate;
+        MP3,
+        WAV
     }
 
-    // Audio stream handler
+    /// <summary>
+    /// A download handler for UnityWebRequest that decodes audio data, passes
+    /// the data into an iAudioClipStream & provides download state information.
+    /// </summary>
+    [Preserve]
     public class AudioStreamHandler : DownloadHandlerScript, IVRequestStreamable
     {
-        // Audio stream data
-        public AudioStreamData StreamData { get; private set; }
+        /// <summary>
+        /// Clip used to cache audio data
+        /// </summary>
+        public IAudioClipStream ClipStream { get; private set; }
 
-        // Current audio clip
-        public AudioClip Clip { get; private set; }
-        // Ready to stream
+        /// <summary>
+        /// The audio stream decode option
+        /// </summary>
+        public AudioStreamDecodeType DecodeType { get; private set; }
+
+        /// <summary>
+        /// Audio stream data is ready to be played
+        /// </summary>
         public bool IsStreamReady { get; private set; }
-        // Ready to stream
+
+        /// <summary>
+        /// Audio stream data has completed reception
+        /// </summary>
         public bool IsStreamComplete { get; private set; }
 
-        // Current number of samples in clip
-        private int _clipMaxSamples = 0;
-        // Current total samples loaded
-        private int _clipSetSamples = 0;
+
         // Leftover byte
         private bool _hasLeftover = false;
         private byte[] _leftovers = new byte[2];
         // Current samples received
         private int _decodingChunks = 0;
         private bool _requestComplete = false;
-
-        // Delegate that accepts an old clip and a new clip
-        public delegate void AudioStreamClipUpdateDelegate(AudioClip oldClip, AudioClip newClip);
-        // Callback for audio clip update during stream
-        public static event AudioStreamClipUpdateDelegate OnClipUpdated;
-        // Callback for audio stream complete
-        public static event Action<AudioClip> OnStreamComplete;
+        // Error handling
+        private int _errorDecoded;
+        private byte[] _errorBytes;
 
         // Generate
-        public AudioStreamHandler(AudioStreamData streamData) : base()
+        public AudioStreamHandler(IAudioClipStream newClipStream, AudioType newDecodeType)
         {
-            // Ensure chunk size is > 0
-            streamData.ClipReadyLength = Mathf.Max(0.01f, streamData.ClipReadyLength);
-            int minChunkSize =
-                Mathf.CeilToInt(streamData.ClipReadyLength * streamData.DecodeChannels * streamData.DecodeSampleRate);
-            streamData.ClipChunkSize = Mathf.Max(minChunkSize, streamData.ClipChunkSize);
-
             // Apply parameters
-            StreamData = streamData;
+            ClipStream = newClipStream;
+            DecodeType = GetDecodeType(newDecodeType);
 
             // Setup data
-            _clipMaxSamples = 0;
-            _clipSetSamples = 0;
             _hasLeftover = false;
             _decodingChunks = 0;
             _requestComplete = false;
             IsStreamReady = false;
             IsStreamComplete = false;
-
-            // Generate clip immediately
-            GenerateClip(StreamData.ClipChunkSize);
+            _errorBytes = null;
+            _errorDecoded = 0;
 
             // Begin stream
-            VLog.D($"Clip Stream - Began\nStream Data:\n{JsonConvert.SerializeObject(streamData)}");
+            VLog.D($"Clip Stream - Began\nClip Stream: {ClipStream.GetType()}\nFile Type: {DecodeType}");
         }
+
         // If size is provided, generate clip using size
+        [Preserve]
         protected override void ReceiveContentLengthHeader(ulong contentLength)
         {
             // Ignore if already complete
@@ -104,18 +93,40 @@ namespace Meta.WitAi.Requests
             {
                 return;
             }
+
+            // Assume text if less than min chunk size
+            int minChunkSize = Mathf.Max(100, Mathf.CeilToInt(0.1f * ClipStream.Channels * ClipStream.SampleRate));
+            if (contentLength < (ulong)minChunkSize)
+            {
+                _errorBytes = new byte[minChunkSize];
+                return;
+            }
+
             // Apply size
-            int newMaxSamples = Mathf.Max(GetClipSamplesFromContentLength(contentLength, StreamData.DecodeType), _clipMaxSamples);
-            VLog.D($"Clip Stream - Received Size\nTotal Samples: {newMaxSamples}");
-            GenerateClip(newMaxSamples);
+            int newSamples = GetClipSamplesFromContentLength(contentLength, DecodeType);
+            VLog.D($"Clip Stream - Received Size\nTotal Samples: {newSamples}");
+            ClipStream.SetTotalSamples(newSamples);
         }
+
         // Receive data
+        [Preserve]
         protected override bool ReceiveData(byte[] receiveData, int dataLength)
         {
             // Exit if desired
             if (!base.ReceiveData(receiveData, dataLength) || IsStreamComplete)
             {
                 return false;
+            }
+
+            // Append to error
+            if (_errorBytes != null)
+            {
+                for (int i = 0; i < Mathf.Min(dataLength, _errorBytes.Length - _errorDecoded); i++)
+                {
+                    _errorBytes[_errorDecoded + i] = receiveData[i];
+                }
+                _errorDecoded += dataLength;
+                return true;
             }
 
             // Decode data async
@@ -132,9 +143,19 @@ namespace Meta.WitAi.Requests
             float[] newSamples = null;
 
             // Decode PCM chunk
-            if (StreamData.DecodeType == AudioStreamDecodeType.PCM16)
+            if (DecodeType == AudioStreamDecodeType.PCM16)
             {
                 newSamples = DecodeChunkPCM16(receiveData, dataLength, ref _hasLeftover, ref _leftovers);
+            }
+            // TODO: Decode MP3 chunk
+            else if (DecodeType == AudioStreamDecodeType.MP3)
+            {
+
+            }
+            // TODO: Decode WAV chunk
+            else if (DecodeType == AudioStreamDecodeType.WAV)
+            {
+
             }
 
             // Failed
@@ -154,34 +175,22 @@ namespace Meta.WitAi.Requests
                 return;
             }
             // Fail without samples
-            else if (newSamples == null)
+            if (newSamples == null)
             {
                 VLog.W($"Decode Chunk Failed\nNo samples returned");
                 TryToFinalize();
                 return;
             }
 
-            // Generate initial clip
-            if (Clip == null)
+            // Add to clip
+            if (newSamples.Length > 0)
             {
-                int newMaxSamples = Mathf.Max(StreamData.ClipChunkSize,
-                    _clipSetSamples + newSamples.Length);
-                GenerateClip(newMaxSamples);
+                ClipStream.AddSamples(newSamples);
+                VLog.D($"Clip Stream - Decoded {newSamples.Length} Samples");
             }
-            // Generate larger clip if needed
-            else if (_clipSetSamples + newSamples.Length > _clipMaxSamples)
-            {
-                int newMaxSamples = Mathf.Max(_clipMaxSamples + StreamData.ClipChunkSize,
-                    _clipSetSamples + newSamples.Length);
-                GenerateClip(newMaxSamples);
-            }
-
-            // Apply to clip
-            Clip.SetData(newSamples, _clipSetSamples);
-            _clipSetSamples += newSamples.Length;
 
             // Stream is now ready
-            if (!IsStreamReady && (float)_clipSetSamples / StreamData.DecodeSampleRate >= StreamData.ClipReadyLength)
+            if (!IsStreamReady && ClipStream.IsReady)
             {
                 IsStreamReady = true;
                 VLog.D($"Clip Stream - Stream Ready");
@@ -191,7 +200,30 @@ namespace Meta.WitAi.Requests
             TryToFinalize();
         }
 
+        // Used for error handling
+        [Preserve]
+        protected override string GetText()
+        {
+            return _errorBytes != null ? Encoding.UTF8.GetString(_errorBytes) : string.Empty;
+        }
+
+        // Return progress if total samples has been determined
+        [Preserve]
+        protected override float GetProgress()
+        {
+            if (_errorBytes != null && _errorBytes.Length > 0)
+            {
+                return (float) _errorDecoded / _errorBytes.Length;
+            }
+            if (ClipStream.TotalSamples > 0)
+            {
+                return (float) ClipStream.AddedSamples / ClipStream.TotalSamples;
+            }
+            return 0f;
+        }
+
         // Clean up clip with final sample count
+        [Preserve]
         protected override void CompleteContent()
         {
             // Ignore if called multiple times
@@ -204,172 +236,94 @@ namespace Meta.WitAi.Requests
             _requestComplete = true;
             TryToFinalize();
         }
+
         // Handle completion
         private void TryToFinalize()
         {
             // Already finalized or not yet complete
-            if (IsStreamComplete || !_requestComplete || _decodingChunks > 0)
+            if (IsStreamComplete || !_requestComplete || _decodingChunks > 0 || ClipStream == null)
             {
                 return;
             }
 
-            // Generate final clip
-            GenerateClip(_clipSetSamples);
-            Clip.name = StreamData.ClipName;
+            // Wait a single frame prior to final completion to ensure OnReady is called first
+            if (!IsStreamReady)
+            {
+                IsStreamReady = true;
+                VLog.D($"Clip Stream - Stream Ready");
+                CoroutineUtility.StartCoroutine(FinalWait());
+                return;
+            }
 
             // Stream complete
             IsStreamComplete = true;
-            OnStreamComplete?.Invoke(Clip);
-            VLog.D($"Clip Stream - Complete\nSamples: {_clipSetSamples}");
+            ClipStream.SetTotalSamples(ClipStream.AddedSamples);
+            VLog.D($"Clip Stream - Complete\nLength: {ClipStream.Length:0.00} secs");
+
+            // Dispose
+            Dispose();
+        }
+
+        // A final wait callback that ensures onready is called first for non-streaming instances
+        private IEnumerator FinalWait()
+        {
+            yield return null;
+            TryToFinalize();
         }
 
         // Destroy old clip
         public void CleanUp()
         {
-            if (Clip != null)
+            // Already complete
+            if (IsStreamComplete)
             {
-                // If successfully completed, destroy elsewhere
-                if (!IsStreamComplete)
-                {
-                    Clip.DestroySafely();
-                }
-                Clip = null;
-            }
-            IsStreamComplete = true;
-            VLog.D($"Clip Stream - Cleanup");
-        }
-
-        // Generate clip
-        private void GenerateClip(int samples)
-        {
-            // Already generated
-            if (Clip != null && _clipMaxSamples == samples)
-            {
+                _leftovers = null;
+                _errorBytes = null;
+                ClipStream = null;
                 return;
             }
 
-            // Get old clip if applicable
-            AudioClip oldClip = Clip;
-            int oldClipSamples = _clipMaxSamples;
-
-            // Generate new clip
-            _clipMaxSamples = samples;
-            Clip = GetCachedClip(samples, StreamData.DecodeChannels, StreamData.DecodeSampleRate);
-
-            // If previous clip existed, get previous data
-            if (oldClip != null)
+            // Destroy clip
+            if (ClipStream != null)
             {
-                // Apply existing data
-                int copySamples = Mathf.Min(oldClipSamples, samples);
-                float[] oldSamples = new float[copySamples];
-                oldClip.GetData(oldSamples, 0);
-                Clip.SetData(oldSamples, 0);
-
-                // Invoke clip updated callback
-                OnClipUpdated?.Invoke(oldClip, Clip);
-                VLog.D($"Clip Stream - Clip Updated\nNew Samples: {samples}\nOld Samples: {oldClipSamples}");
-
-                // Requeue previous clip
-                ReuseCachedClip(oldClip);
-            }
-            else
-            {
-                VLog.D($"Clip Stream - Clip Generated\nSamples: {samples}");
-            }
-        }
-
-        #region CACHING
-        // Clip cache
-        private static int _clipsGenerated = 0;
-        private static List<AudioClip> _clips = new List<AudioClip>();
-
-        /// <summary>
-        /// Method used to preload clips to improve performance at runtime
-        /// </summary>
-        /// <param name="total">Total clips to preload.  This should be the number of clips that could be running at once</param>
-        public static void PreloadCachedClips(int total, int lengthSamples, int channels, int frequency)
-        {
-            for (int i = 0; i < total; i++)
-            {
-                GenerateCacheClip(lengthSamples, channels, frequency);
-            }
-        }
-        // Preload a single clip
-        private static void GenerateCacheClip(int lengthSamples, int channels, int frequency)
-        {
-            _clipsGenerated++;
-            AudioClip clip = AudioClip.Create($"AudioClip_{_clipsGenerated:000}", lengthSamples, channels, frequency, false);
-            _clips.Add(clip);
-            VLog.D($"Generating TTS Clip #{_clipsGenerated}\nSamples: {lengthSamples}");
-        }
-        // Preload a single clip
-        private static AudioClip GetCachedClip(int lengthSamples, int channels, int frequency)
-        {
-            // Find a matching clip
-            int clipIndex = _clips.FindIndex((clip) => DoesClipMatch(clip, lengthSamples, channels, frequency));
-
-            // Generate a clip with the specified size
-            if (clipIndex == -1)
-            {
-                clipIndex = _clips.Count;
-                GenerateCacheClip(lengthSamples, channels, frequency);
+                ClipStream.Unload();
+                ClipStream = null;
             }
 
-            // Get clip, remove from preload list & return
-            AudioClip result = _clips[clipIndex];
-            _clips.RemoveAt(clipIndex);
-            return result;
+            // Dispose handler
+            Dispose();
+
+            // Complete
+            IsStreamComplete = true;
+            VLog.D($"Clip Stream - Cleaned Up");
         }
-        // Check if clip matches
-        private static bool DoesClipMatch(AudioClip clip, int lengthSamples, int channels, int frequency)
-        {
-            return clip.samples == lengthSamples && clip.channels == channels && clip.frequency == frequency;
-        }
-        // Reuse clip
-        private static void ReuseCachedClip(AudioClip clip)
-        {
-            _clips.Add(clip);
-        }
-        /// <summary>
-        /// Destroy all cached clips
-        /// </summary>
-        public static void DestroyCachedClips()
-        {
-            foreach (var clip in _clips)
-            {
-                clip.DestroySafely();
-            }
-            _clips.Clear();
-        }
-        #endregion
 
         #region STATIC
-        // Decode raw pcm data
-        public static float[] DecodeAudio(byte[] rawData, AudioStreamDecodeType decodeType)
+        /// <summary>
+        /// Determine decode type based on audio type
+        /// </summary>
+        public static AudioStreamDecodeType GetDecodeType(AudioType audioType)
         {
-            // Samples to be decoded
-            float[] samples = null;
-
-            // Decode raw data
-            if (decodeType == AudioStreamDecodeType.PCM16)
+            switch (audioType)
             {
-                samples = DecodePCM16(rawData);
+                case AudioType.WAV:
+                    return AudioStreamDecodeType.WAV;
+                case AudioType.MPEG:
+                    return AudioStreamDecodeType.MP3;
             }
-            // Not supported
-            else
-            {
-                VLog.E($"Not Supported Decode File Type\nType: {decodeType}");
-            }
-
-            // Return samples
-            return samples;
+            return AudioStreamDecodeType.PCM16;
         }
-        // Get audio clip from samples
-        private static AudioClip GetClipFromSamples(float[] samples, string clipName, int channels, int sampleRate)
+        /// <summary>
+        /// Currently can only decode pcm
+        /// </summary>
+        public static bool CanDecodeType(AudioType audioType)
         {
-            AudioClip result = AudioClip.Create(clipName, samples.Length, channels, sampleRate, false);
-            result.SetData(samples, 0);
-            return result;
+            switch (GetDecodeType(audioType))
+            {
+                case AudioStreamDecodeType.PCM16:
+                    return true;
+            }
+            return false;
         }
         // Decode raw pcm data
         public static AudioClip GetClipFromRawData(byte[] rawData, AudioStreamDecodeType decodeType, string clipName, int channels, int sampleRate)
@@ -407,6 +361,33 @@ namespace Meta.WitAi.Requests
                     onComplete?.Invoke(result, error);
                 }
             });
+        }
+        // Decode raw pcm data
+        public static float[] DecodeAudio(byte[] rawData, AudioStreamDecodeType decodeType)
+        {
+            // Samples to be decoded
+            float[] samples = null;
+
+            // Decode raw data
+            if (decodeType == AudioStreamDecodeType.PCM16)
+            {
+                samples = DecodePCM16(rawData);
+            }
+            // Not supported
+            else
+            {
+                VLog.E($"Not Supported Decode File Type\nType: {decodeType}");
+            }
+
+            // Return samples
+            return samples;
+        }
+        // Get audio clip from samples
+        private static AudioClip GetClipFromSamples(float[] samples, string clipName, int channels, int sampleRate)
+        {
+            AudioClip result = AudioClip.Create(clipName, samples.Length, channels, sampleRate, false);
+            result.SetData(samples, 0);
+            return result;
         }
         // Determines clip sample count via content length dependent on file type
         public static int GetClipSamplesFromContentLength(ulong contentLength, AudioStreamDecodeType decodeType)
@@ -474,6 +455,14 @@ namespace Meta.WitAi.Requests
         {
             return (float)BitConverter.ToInt16(rawData, index) / (float)Int16.MaxValue;
         }
+        #endregion
+
+        #region MPEG DECODE
+
+        #endregion
+
+        #region WAV DECODE
+
         #endregion
     }
 }

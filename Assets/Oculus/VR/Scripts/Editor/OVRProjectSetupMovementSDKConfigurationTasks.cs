@@ -50,7 +50,7 @@ internal static class OVRProjectSetupMovementSDKConfigurationTasks
                     OVRSkeletonEditor.FixOVRBodyConfiguration(skeleton);
                 }
             },
-            fixMessage: $"Crete OVRBody components where they are required"
+            fixMessage: $"Create OVRBody components where they are required"
         );
     }
 
@@ -78,9 +78,10 @@ internal static class OVRProjectSetupMovementSDKConfigurationTasks
         .FindAll(s => !OVRSkeletonEditor.IsSkeletonProperlyConfigured(s))
         .ToList();
 
-    private static List<OVRCustomFace> FindMisconfiguredOVRCustomFaceInstances() => FindComponentsInScene<OVRCustomFace>()
-        .FindAll(s => !OVRCustomFaceEditor.IsFaceExpressionsConfigured(s))
-        .ToList();
+    private static List<OVRCustomFace> FindMisconfiguredOVRCustomFaceInstances() =>
+        FindComponentsInScene<OVRCustomFace>()
+            .FindAll(s => !OVRCustomFaceEditor.IsFaceExpressionsConfigured(s))
+            .ToList();
 
     private static List<T> FindComponentsInScene<T>() where T : MonoBehaviour
     {

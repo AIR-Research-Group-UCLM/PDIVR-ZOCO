@@ -35,24 +35,40 @@ namespace Meta.Voice
         protected NLPAudioRequest(TOptions newOptions, TEvents newEvents) : base(newOptions, newEvents) {}
 
         /// <summary>
-        /// Set response data early if possible
+        /// Getter for response data
         /// </summary>
-        public WitResponseNode ResponseData
-        {
-            get => Results?.ResponseData;
-            protected set
-            {
-                // Ignore if same
-                WitResponseNode newData = value;
-                if (newData == null || newData.Equals(Results?.ResponseData))
-                {
-                    return;
-                }
+        public WitResponseNode ResponseData => Results?.ResponseData;
 
-                // Apply response data
-                ApplyResultResponseData(newData);
-                OnResponseDataChanged();
+        // Ensure final is not called multiple times
+        private bool _isFinalized = false;
+
+        /// <summary>
+        /// Initializes the request, and ensures that the request commences in a non-finalized state.
+        /// </summary>
+        protected override void OnInit()
+        {
+            base.OnInit();
+            _isFinalized = false;
+        }
+
+        /// <summary>
+        /// Method to be called when an NLP request had completed
+        /// </summary>
+        /// <param name="responseData">Parsed json data returned from request</param>
+        /// <param name="error">Error returned from a request</param>
+        protected virtual void HandlePartialNlpResponse(WitResponseNode responseData)
+        {
+            // Ignore if not in correct state
+            if (!IsActive)
+            {
+                return;
             }
+
+            // Apply response data
+            ApplyResultResponseData(responseData);
+
+            // Partial response called
+            OnPartialResponse();
         }
 
         /// <summary>
@@ -64,7 +80,7 @@ namespace Meta.Voice
         /// <summary>
         /// Called when response data has been updated
         /// </summary>
-        protected virtual void OnResponseDataChanged()
+        protected virtual void OnPartialResponse()
         {
             Events?.OnPartialResponse?.Invoke(ResponseData);
         }
@@ -74,8 +90,21 @@ namespace Meta.Voice
         /// </summary>
         /// <param name="responseData">Parsed json data returned from request</param>
         /// <param name="error">Error returned from a request</param>
-        protected virtual void HandleNlpResponse(WitResponseNode responseData, string error)
+        protected virtual void HandleFinalNlpResponse(WitResponseNode responseData, string error)
         {
+            // Ignore if not in correct state
+            if (!IsActive || _isFinalized)
+            {
+                return;
+            }
+            _isFinalized = true;
+
+            // Send partial data if not previously sent
+            if (responseData != null && responseData != ResponseData)
+            {
+                HandlePartialNlpResponse(responseData);
+            }
+            
             // Error returned
             if (!string.IsNullOrEmpty(error))
             {
@@ -89,9 +118,42 @@ namespace Meta.Voice
             // Success
             else
             {
-                ResponseData = responseData;
-                Events?.OnFullResponse?.Invoke(ResponseData);
+                // Callback for final response
+                OnFullResponse();
+
+                // Handle success
                 HandleSuccess(Results);
+            }
+        }
+
+        /// <summary>
+        /// Called when response data has been updated for the final time
+        /// </summary>
+        protected virtual void OnFullResponse()
+        {
+            Events?.OnFullResponse?.Invoke(ResponseData);
+        }
+
+        /// <summary>
+        /// Cancels the current request but handles success immediately if possible
+        /// </summary>
+        public virtual void CompleteEarly()
+        {
+            // Ignore if not in correct state
+            if (!IsActive || _isFinalized)
+            {
+                return;
+            }
+
+            // Cancel instead
+            if (ResponseData == null)
+            {
+                Cancel("Cannot complete early without response data");
+            }
+            // Handle success
+            else
+            {
+                HandleFinalNlpResponse(ResponseData, string.Empty);
             }
         }
     }

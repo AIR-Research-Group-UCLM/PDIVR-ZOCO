@@ -21,7 +21,6 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
-using Meta.WitAi;
 
 namespace Oculus.Voice.Demo.BuiltInDemo
 {
@@ -97,7 +96,7 @@ namespace Oculus.Voice.Demo.BuiltInDemo
         {
             if (_timerExist)
             {
-                VLog.W("A timer already exist.");
+                Debug.LogWarning("A timer already exist.");
                 return;
             }
 

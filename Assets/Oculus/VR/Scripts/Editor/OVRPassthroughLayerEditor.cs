@@ -65,8 +65,8 @@ public class OVRPassthroughLayerEditor : Editor
         "Color Adjustment",
         "Grayscale",
         "Grayscale to Color",
-        "Color LUT (Experimental)",
-        "Blended Color LUTs (Experimental)",
+        "Color LUT",
+        "Blended Color LUTs",
         "Custom"
     };
 
@@ -110,16 +110,6 @@ public class OVRPassthroughLayerEditor : Editor
     private SerializedProperty _propColorLutTargetTexture;
     private SerializedProperty _propLutWeight;
     private SerializedProperty _propFlipLutY;
-
-    private bool _wasExperimentalWarningShown;
-    private const string DocumentationHyperlink = "https://developer.oculus.com/experimental/experimental-overview/";
-
-    private static readonly string DocumentationLink =
-        $"<a href=\"{DocumentationHyperlink}\">{DocumentationHyperlink}</a>";
-
-    private static readonly string ExperimentalWarningText =
-        $"Please enable experimental features to use color LUT passthrough style. " +
-        $"See {DocumentationLink} for more information.";
 
     void OnEnable()
     {
@@ -240,18 +230,6 @@ public class OVRPassthroughLayerEditor : Editor
         if (layer.colorMapEditorType == ColorMapEditorType.ColorLut
             || layer.colorMapEditorType == ColorMapEditorType.InterpolatedColorLut)
         {
-            OVRProjectConfig projectConfig = OVRProjectConfig.GetProjectConfig();
-            if (!projectConfig.experimentalFeaturesEnabled)
-            {
-                if (!_wasExperimentalWarningShown)
-                {
-                    Debug.LogWarning(ExperimentalWarningText);
-                    _wasExperimentalWarningShown = true;
-                }
-
-                DrawFixMeBox("Requires Experimental Features enabled", () => EnableExperimentalFeatures(projectConfig));
-            }
-
             var sourceLutLabel = layer.colorMapEditorType == ColorMapEditorType.ColorLut
                 ? "LUT"
                 : "Source LUT";
@@ -276,19 +254,8 @@ public class OVRPassthroughLayerEditor : Editor
                 : "Blend between the source and the target LUT. A value of 0 fully applies the source LUT and a value of 1 fully applies the target LUT.";
             EditorGUILayout.PropertyField(_propLutWeight, new GUIContent("Blend", weightTooltip));
         }
-        else
-        {
-            _wasExperimentalWarningShown = false;
-        }
 
         serializedObject.ApplyModifiedProperties();
-    }
-
-    private void EnableExperimentalFeatures(OVRProjectConfig projectConfig)
-    {
-        Undo.RecordObject(projectConfig, "Changed experimental feature enabled state");
-        projectConfig.experimentalFeaturesEnabled = true;
-        Debug.LogWarning($"Experimental features enabled, see {DocumentationLink} for more information");
     }
 
     private void PerformLutTextureCheck(Texture2D texture)
@@ -299,10 +266,8 @@ public class OVRPassthroughLayerEditor : Editor
             {
                 EditorGUILayout.HelpBox(message, MessageType.Error);
             }
-            else
-            {
-                CheckLutImportSettings(texture);
-            }
+
+            CheckLutImportSettings(texture);
         }
     }
 
@@ -316,11 +281,16 @@ public class OVRPassthroughLayerEditor : Editor
             // builtin resources, thus the check for null
             if (importer != null)
             {
-                bool valid = importer.isReadable == true;
+                bool isReadable = importer.isReadable == true;
+                bool isUncompressed = importer.textureCompression == TextureImporterCompression.Uncompressed;
+                bool valid = isReadable && isUncompressed;
 
                 if (!valid)
                 {
-                    DrawFixMeBox("Texture is not readable.", () => SetLutImportSettings(importer));
+                    string warningMessage = ""
+                                            + (isReadable ? "" : "Texture is not readable. ")
+                                            + (isUncompressed ? "" : "Texture is compressed.");
+                    DrawFixMeBox(warningMessage, () => SetLutImportSettings(importer));
                 }
             }
         }
@@ -329,6 +299,7 @@ public class OVRPassthroughLayerEditor : Editor
     private void SetLutImportSettings(TextureImporter importer)
     {
         importer.isReadable = true;
+        importer.textureCompression = TextureImporterCompression.Uncompressed;
         importer.SaveAndReimport();
         AssetDatabase.Refresh();
     }

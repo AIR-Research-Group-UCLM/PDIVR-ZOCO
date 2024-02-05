@@ -11,6 +11,7 @@ using Meta.Voice;
 using Meta.WitAi.Configuration;
 using Meta.WitAi.Data.Configuration;
 using Meta.WitAi.Json;
+using UnityEngine;
 
 namespace Meta.WitAi.Requests
 {
@@ -51,15 +52,16 @@ namespace Meta.WitAi.Requests
             // Generate a message WitVRequest
             if (InputType == NLPRequestInputType.Text)
             {
-                _request = new WitMessageVRequest(Configuration, newOptions.RequestId);
-                Endpoint = WitEndpointConfig.GetEndpointConfig(Configuration).Message;
+                _request = new WitMessageVRequest(Configuration, newOptions.RequestId, SetDownloadProgress);
+                Endpoint = Configuration.GetEndpointInfo().Message;
+                _request.Timeout = Mathf.RoundToInt(Configuration.timeoutMS / 1000f);
                 ShouldPost = false;
             }
             // Generate an audio WitVRequest
             else if (InputType == NLPRequestInputType.Audio)
             {
                 // TODO: T121060485: Add audio support to WitVRequest
-                Endpoint = WitEndpointConfig.GetEndpointConfig(Configuration).Speech;
+                Endpoint = Configuration.GetEndpointInfo().Speech;
                 ShouldPost = true;
             }
 
@@ -106,9 +108,19 @@ namespace Meta.WitAi.Requests
             {
                 messageRequest.MessageRequest(Endpoint, ShouldPost,
                     Options.Text, Options.QueryParams,
-                    HandleNlpResponse, SetDownloadProgress);
+                    HandleFinalNlpResponse);
             }
         }
+
+        /// <summary>
+        /// Set status code prior to handling response
+        /// </summary>
+        protected override void HandleFinalNlpResponse(WitResponseNode responseData, string error)
+        {
+            StatusCode = _request.ResponseCode;
+            base.HandleFinalNlpResponse(responseData, error);
+        }
+
         /// <summary>
         /// Handle cancellation
         /// </summary>

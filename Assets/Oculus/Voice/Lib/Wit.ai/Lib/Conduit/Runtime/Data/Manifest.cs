@@ -216,14 +216,14 @@ namespace Meta.Conduit
                     continue;
                 }
 
-                var attributes = targetMethod.GetCustomAttributes(typeof(OnConduitFailedParameterResolutionAttribute), false);
+                var attributes = targetMethod.GetCustomAttributes(typeof(HandleEntityResolutionFailure), false);
                 if (attributes.Length == 0)
                 {
                     VLog.E($"{targetMethod} - Did not have expected Conduit attribute");
                     resolvedAll = false;
                     continue;
                 }
-                var actionAttribute = attributes.First() as OnConduitFailedParameterResolutionAttribute;
+                var actionAttribute = attributes.First() as HandleEntityResolutionFailure;
                 if (actionAttribute == null)
                 {
                     VLog.E("Found null attribute when one was expected");
@@ -234,7 +234,7 @@ namespace Meta.Conduit
                 {
                     Type = targetType,
                     MethodInfo = targetMethod,
-                    CustomAttributeType = typeof(OnConduitFailedParameterResolutionAttribute)
+                    CustomAttributeType = typeof(HandleEntityResolutionFailure)
                 };
 
                 if (!_methodLookup.ContainsKey(action.Name))
@@ -267,7 +267,7 @@ namespace Meta.Conduit
         private MethodInfo GetBestMethodMatch(Type targetType, string method, Type[] parameterTypes)
         {
             var exactMatch = targetType.GetMethod(method,
-                BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static, null, CallingConventions.Any,
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic, null, CallingConventions.Any,
                 parameterTypes, null);
 
             return exactMatch;
@@ -305,7 +305,7 @@ namespace Meta.Conduit
             {
                 foreach (var invocationContext in methodLookupValue)
                 {
-                    if (invocationContext.CustomAttributeType == typeof(OnConduitFailedParameterResolutionAttribute))
+                    if (invocationContext.CustomAttributeType == typeof(HandleEntityResolutionFailure))
                     {
                         contexts.Add(invocationContext);
                     }

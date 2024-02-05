@@ -23,8 +23,8 @@ using System.IO;
 using System;
 
 #if UNITY_EDITOR
-    using UnityEditor;
-    using System.Linq;
+using UnityEditor;
+using System.Linq;
 #endif
 
 public class OVRRuntimeSettings : ScriptableObject
@@ -51,6 +51,7 @@ public class OVRRuntimeSettings : ScriptableObject
 
     public OVRManager.ColorSpace colorSpace = OVRManager.ColorSpace.P3;
 
+    [SerializeField] private bool hasSentConsentEvent;
     [SerializeField] private bool hasSetTelemetryEnabled;
     [SerializeField] private bool telemetryEnabled;
 
@@ -71,19 +72,42 @@ public class OVRRuntimeSettings : ScriptableObject
 
             return telemetryEnabled;
         }
-#if UNITY_EDITOR
-        set
-        {
-            telemetryEnabled = value;
-            hasSetTelemetryEnabled = true;
-            CommitRuntimeSettings(this);
-        }
-#endif
     }
 
-
-
 #if UNITY_EDITOR
+    internal void SetTelemetryEnabled(bool enabled, OVRTelemetryConstants.OVRManager.ConsentOrigins origin)
+    {
+        telemetryEnabled = enabled;
+        hasSetTelemetryEnabled = true;
+        SendConsentEvent(origin);
+        CommitRuntimeSettings(this);
+    }
+
+    internal void SendConsentEvent(OVRTelemetryConstants.OVRManager.ConsentOrigins origin)
+    {
+        if (hasSentConsentEvent && origin != OVRTelemetryConstants.OVRManager.ConsentOrigins.Settings)
+        {
+            return;
+        }
+
+        if (!hasSetTelemetryEnabled)
+        {
+            return;
+        }
+
+
+        // Send Consent Event
+        new OVRTelemetryMarker(
+                OVRTelemetry.ActiveClient,
+                OVRTelemetryConstants.OVRManager.MarkerId.Consent)
+            .AddAnnotation(OVRTelemetryConstants.OVRManager.AnnotationTypes.Origin, origin.ToString())
+            .SetResult(telemetryEnabled ? OVRPlugin.Qpl.ResultType.Success : OVRPlugin.Qpl.ResultType.Fail)
+            .Send();
+
+        hasSentConsentEvent = true;
+        CommitRuntimeSettings(this);
+    }
+
     private static string GetOculusRuntimeSettingsAssetPath()
     {
         string resourcesPath = Path.Combine(Application.dataPath, "Resources");

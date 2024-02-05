@@ -46,8 +46,8 @@ public class OVRBody : MonoBehaviour,
         OVRPermissionsRequester.Permission.BodyTracking;
 
     private Action<string> _onPermissionGranted;
-    private static int _trackingInstanceCount;
 
+    private static int _trackingInstanceCount;
 
     /// <summary>
     /// The raw <see cref="BodyState"/> data used to populate the <see cref="OVRSkeleton"/>.
@@ -61,16 +61,16 @@ public class OVRBody : MonoBehaviour,
 
     private void OnEnable()
     {
-        _trackingInstanceCount++;
         _dataChangedSinceLastQuery = false;
         _hasData = false;
 
-
+        _trackingInstanceCount++;
         if (!StartBodyTracking())
         {
             enabled = false;
             return;
         }
+
 
         if (OVRPlugin.nativeXrApi == OVRPlugin.XrApi.OpenXR)
         {
@@ -125,6 +125,7 @@ public class OVRBody : MonoBehaviour,
 
     private void Update() => GetBodyState(OVRPlugin.Step.Render);
 
+
     private void GetBodyState(OVRPlugin.Step step)
     {
         if (OVRPlugin.GetBodyState(step, ref _bodyState))
@@ -142,7 +143,8 @@ public class OVRBody : MonoBehaviour,
 
     OVRSkeleton.SkeletonPoseData OVRSkeleton.IOVRSkeletonDataProvider.GetSkeletonPoseData()
     {
-        if (!_hasData) return default;
+        if (!_hasData)
+            return default;
 
         if (_dataChangedSinceLastQuery)
         {
